@@ -42,10 +42,13 @@ def update_dataset_metadata_with_did(
 
 
 async def release_workflow_lock(return_url: str, success: bool, reason: str | None = None) -> None:
-    body = {"status": "success" if success else "failure"}
-    if reason and not success:
-        body["reason"] = reason
+    # http/sr requires text/plain; body must start with "OK" for success, anything else triggers rollback
+    body = "OK" if success else f"FAILURE: {reason}" if reason else "FAILURE"
 
     async with httpx.AsyncClient(timeout=20.0) as client:
-        response = await client.post(return_url, json=body)
+        response = await client.post(
+            return_url,
+            content=body.encode(),
+            headers={"Content-Type": "text/plain"},
+        )
         response.raise_for_status()

@@ -6,4 +6,3 @@ class PrepublishPayload(BaseModel):
     datasetId: str
     datasetPid: str
     datasetVersion: str
-    returnURL: str

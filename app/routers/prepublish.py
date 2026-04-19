@@ -129,16 +129,18 @@ async def prepublish(
             did_log_url=did_log_url,
             pid_url=dataset.pid_url,
         )
+        callback_url = f"{settings.dataverse_url.rstrip('/')}/api/workflows/{payload.invocationId}"
         await db.commit()
-        await release_workflow_lock(payload.returnURL, success=True)
+        await release_workflow_lock(callback_url, success=True)
         return {"status": "ok", "dataset_uuid": str(dataset.id), "did": dataset.did}
     except HTTPException:
         raise
     except Exception as exc:
         await db.rollback()
         reason = str(exc)
+        callback_url = f"{settings.dataverse_url.rstrip('/')}/api/workflows/{payload.invocationId}"
         try:
-            await release_workflow_lock(payload.returnURL, success=False, reason=reason)
+            await release_workflow_lock(callback_url, success=False, reason=reason)
         except Exception:
             pass
         raise HTTPException(status_code=500, detail=f"Prepublish failed: {reason}") from exc
