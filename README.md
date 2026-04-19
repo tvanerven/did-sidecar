@@ -576,5 +576,3 @@ The sidecar will attempt to update the metadata block on every PrePublish. If th
 Implementation based on the [did:webvh specification](https://w3c-ccg.github.io/did-method-webvh/).
 
 ---
-
-For full implementation details, see [did-sidecar-spec.md](did-sidecar-spec.md).
