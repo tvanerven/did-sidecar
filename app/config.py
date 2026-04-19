@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     did_signing_key_encrypted: str = Field(alias="DID_SIGNING_KEY_ENCRYPTED")
     did_signing_key_passphrase: str = Field(alias="DID_SIGNING_KEY_PASSPHRASE")
-    dataverse_workflow_token: str = Field(alias="DATAVERSE_WORKFLOW_TOKEN")
+    dataverse_workflow_token: str | None = Field(default=None, alias="DATAVERSE_WORKFLOW_TOKEN")
 
     admin_token: str | None = Field(default=None, alias="ADMIN_TOKEN")
 

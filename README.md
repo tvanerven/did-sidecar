@@ -115,7 +115,7 @@ cp .env.example .env
 | `DATABASE_URL` | PostgreSQL connection string (asyncpg driver) |
 | `DID_SIGNING_KEY_ENCRYPTED` | Fernet-encrypted Ed25519 private key |
 | `DID_SIGNING_KEY_PASSPHRASE` | Passphrase for decrypting the signing key |
-| `DATAVERSE_WORKFLOW_TOKEN` | Token for verifying inbound PrePublish requests |
+| `DATAVERSE_WORKFLOW_TOKEN` | Optional token for verifying inbound requests (manual/test calls only — Dataverse `http/sr` does not send auth headers; use IP whitelisting for production) |
 | `ADMIN_TOKEN` | Optional token for admin endpoints (key rotation) |
 
 ### Signing Key Setup
@@ -179,13 +179,11 @@ uvicorn app.main:app --reload
   "invocationId": "abc-123-def",
   "datasetId": "e1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6",
   "datasetPid": "doi:10.5281/zenodo.1234567",
-  "datasetVersion": "1.0",
-  "returnURL": "https://dataverse.your-institution.org/api/workflows/invocations/abc-123-def"
+  "datasetVersion": "1.0"
 }
 ```
 
-**Headers:**
-- `X-Dataverse-Workflow-Token: <DATAVERSE_WORKFLOW_TOKEN>` (or `Authorization: Bearer <token>`)
+> **Note:** The body fields are determined by the workflow step `body` template configured in Dataverse (see Workflow Configuration). Dataverse's `http/sr` step does not support custom request headers, so no authentication header is sent. Secure the endpoint via IP whitelisting in Dataverse instead.
 
 **Response (200 OK):**
 ```json
@@ -203,7 +201,7 @@ uvicorn app.main:app --reload
 - **Existing dataset (subsequent major publish)**: Appends new log entry, adds `#vN` service endpoint
 - **Minor publish (1.1, 1.2, …)**: No DID log update
 - Updates Dataverse custom metadata block with DID fields
-- Releases Dataverse workflow lock (success or failure)
+- POSTs `OK` (text/plain) to `{DATAVERSE_URL}/api/workflows/{invocationId}` to release the lock, or a non-OK body on failure to trigger rollback
 
 ### 2. GET /resolve/{uuid}
 
@@ -359,7 +357,7 @@ Save this as `workflow-prepublish-did.json`:
         "url": "http://sidecar:8000/prepublish",
         "method": "POST",
         "contentType": "application/json",
-        "body": "{\"invocationId\":\"${invocationId}\",\"datasetId\":\"${dataset.id}\",\"datasetPid\":\"${dataset.identifier}\",\"datasetVersion\":\"${majorVersion}.${minorVersion}\",\"returnURL\":\"${callback}\"}",
+        "body": "{\"invocationId\":\"${invocationId}\",\"datasetId\":\"${dataset.id}\",\"datasetPid\":\"${dataset.identifier}\",\"datasetVersion\":\"${majorVersion}.${minorVersion}\"}",
         "expectedResponse": ".*ok.*",
         "rollbackUrl": "http://sidecar:8000/admin/rollback",
         "rollbackMethod": "POST"
@@ -419,7 +417,7 @@ When a dataset is published:
 
 **Error Handling:**
 
-If the sidecar is unreachable or returns a non-matching response, the workflow fails and the dataset publication is rolled back. The invocationId persists in Dataverse logs for debugging.
+If the sidecar is unreachable or returns a non-matching response, the workflow fails and the dataset publication is rolled back. On internal errors the sidecar POSTs a `FAILURE: <reason>` body (text/plain) to the callback URL, triggering rollback. The invocationId persists in Dataverse logs for debugging.
 
 ## DID Format
 
@@ -525,13 +523,11 @@ curl http://localhost:8000/datasets/{uuid}/did.jsonl
 ```bash
 curl -X POST http://localhost:8000/prepublish \
   -H "Content-Type: application/json" \
-  -H "X-Dataverse-Workflow-Token: <your-token>" \
   -d '{
     "invocationId": "test-123",
     "datasetId": "test-uuid",
     "datasetPid": "doi:10.5281/test",
-    "datasetVersion": "1.0",
-    "returnURL": "http://localhost:9999/callback"
+    "datasetVersion": "1.0"
   }'
 ```
 

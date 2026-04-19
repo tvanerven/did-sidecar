@@ -35,13 +35,12 @@ async def prepublish(
     authorization: str | None = Header(default=None),
 ) -> dict:
     settings = get_settings()
-    expected = settings.dataverse_workflow_token
-    presented = x_dataverse_workflow_token
-    if not presented and authorization and authorization.lower().startswith("bearer "):
-        presented = authorization.split(" ", 1)[1]
-
-    if presented != expected:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid workflow token")
+    if settings.dataverse_workflow_token:
+        presented = x_dataverse_workflow_token
+        if not presented and authorization and authorization.lower().startswith("bearer "):
+            presented = authorization.split(" ", 1)[1]
+        if presented != settings.dataverse_workflow_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid workflow token")
 
     try:
         _ = fetch_dataset_metadata(settings.dataverse_url, settings.dataverse_api_token, payload.datasetPid)
