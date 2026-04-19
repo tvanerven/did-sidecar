@@ -1,0 +1,36 @@
+services:
+  sidecar:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: did_sidecar
+      POSTGRES_PASSWORD: did_sidecar
+      POSTGRES_DB: did_sidecar
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  universal-resolver:
+    image: universalresolver/uni-resolver-web:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - driver-webvh
+
+  driver-webvh:
+    image: universalresolver/driver-did-webvh:latest
+    build:
+      context: uni-resolver-driver-did-webvh
+    ports:
+      - "8080:8081"
+
+volumes:
+  pgdata:

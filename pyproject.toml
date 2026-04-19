@@ -1,0 +1,17 @@
+[project]
+name = "did-sidecar"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "alembic>=1.18.4",
+    "asyncpg>=0.31.0",
+    "cryptography>=46.0.7",
+    "fastapi>=0.136.0",
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.13.1",
+    "pydataverse>=0.3.5",
+    "sqlalchemy[asyncio]>=2.0.49",
+    "uvicorn[standard]>=0.44.0",
+]

@@ -1,0 +1,3 @@
+[submodule "uni-resolver-driver-did-webvh"]
+	path = uni-resolver-driver-did-webvh
+	url = git@github.com:decentralized-identity/uni-resolver-driver-did-webvh.git
