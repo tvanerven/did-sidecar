@@ -178,7 +178,7 @@ uvicorn app.main:app --reload
 {
   "invocationId": "abc-123-def",
   "datasetId": "e1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6",
-  "datasetPid": "doi:10.5281/zenodo.1234567",
+  "datasetGlobalId": "https://resolve.wizardtower.dev/resolve/NK9QX2",
   "datasetVersion": "1.0"
 }
 ```
@@ -354,12 +354,12 @@ Save this as `workflow-prepublish-did.json`:
       "provider": ":internal",
       "stepType": "http/sr",
       "parameters": {
-        "url": "http://sidecar:8000/prepublish",
+        "url": "https://resolve.wizardtower.dev/prepublish",
         "method": "POST",
         "contentType": "application/json",
-        "body": "{\"invocationId\":\"${invocationId}\",\"datasetId\":\"${dataset.id}\",\"datasetPid\":\"${dataset.identifier}\",\"datasetVersion\":\"${majorVersion}.${minorVersion}\"}",
+        "body": "{\"invocationId\":\"${invocationId}\",\"datasetId\":\"${dataset.id}\",\"datasetGlobalId\":\"${dataset.globalId}\",\"datasetVersion\":\"${majorVersion}.${minorVersion}\"}",
         "expectedResponse": ".*ok.*",
-        "rollbackUrl": "http://sidecar:8000/admin/rollback",
+        "rollbackUrl": "https://resolve.wizardtower.dev/admin/rollback",
         "rollbackMethod": "POST"
       }
     }
@@ -370,7 +370,7 @@ Save this as `workflow-prepublish-did.json`:
 **Workflow Variables Available:**
 - `${invocationId}` — Unique workflow invocation identifier
 - `${dataset.id}` — Dataset UUID
-- `${dataset.identifier}` — Dataset PID (e.g., `doi:10.5281/...`)
+- `${dataset.globalId}` — Dataset Permalink URL (e.g., `https://resolve.wizardtower.dev/resolve/NK9QX2`)
 - `${dataset.displayName}` — Dataset title
 - `${majorVersion}` — Major version number
 - `${minorVersion}` — Minor version number

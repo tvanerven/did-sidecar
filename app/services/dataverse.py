@@ -21,24 +21,20 @@ def update_dataset_metadata_with_did(
     *,
     dataverse_url: str,
     api_token: str,
-    dataset_pid: str,
+    dataset_global_id: str,
     did: str,
-    did_log_url: str,
-    pid_url: str,
 ) -> None:
     api = _get_native_api(dataverse_url, api_token)
     payload = {
         "metadataBlocks": {
-            "pid_did": {
+            "DID": {
                 "fields": [
-                    {"typeName": "didIdentifier", "value": did},
-                    {"typeName": "didLogUrl", "value": did_log_url},
-                    {"typeName": "pidUrl", "value": pid_url},
+                    {"typeName": "didWebVh", "value": did},
                 ]
             }
         }
     }
-    api.edit_dataset_metadata(dataset_pid, payload, is_pid=True)
+    api.edit_dataset_metadata(dataset_global_id, payload, is_pid=True)
 
 
 async def release_workflow_lock(return_url: str, success: bool, reason: str | None = None) -> None:

@@ -1,13 +1,14 @@
 import hashlib
 import json
 from datetime import UTC, datetime
-from uuid import UUID
 from urllib.parse import urlparse
 
 
-def build_did(pid_base_url: str, dataset_uuid: UUID) -> str:
-    host = urlparse(pid_base_url).netloc
-    return f"did:webvh:{host}:datasets:{dataset_uuid}"
+def build_did(global_id_url: str) -> str:
+    parsed = urlparse(global_id_url)
+    host = parsed.netloc
+    short_id = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+    return f"did:webvh:{host}:{short_id}"
 
 
 def _make_entry_hash(payload: dict) -> str:
@@ -43,8 +44,7 @@ def _base_parameters(signing_key: str) -> dict:
 def create_genesis_log_entry(
     *,
     did: str,
-    dataverse_pid: str,
-    dataverse_url: str,
+    global_id_url: str,
     signing_key: str,
 ) -> dict:
     state = {
@@ -54,7 +54,7 @@ def create_genesis_log_entry(
             {
                 "id": "#dataset",
                 "type": "DataverseDataset",
-                "serviceEndpoint": f"{dataverse_url.rstrip('/')}/dataset.xhtml?persistentId={dataverse_pid}",
+                "serviceEndpoint": global_id_url,
             }
         ],
     }
@@ -71,8 +71,7 @@ def create_genesis_log_entry(
 def create_update_log_entry(
     *,
     did: str,
-    dataverse_pid: str,
-    dataverse_url: str,
+    global_id_url: str,
     version_number: int,
     dataverse_version: str,
     signing_key: str,
@@ -84,15 +83,12 @@ def create_update_log_entry(
             {
                 "id": "#dataset",
                 "type": "DataverseDataset",
-                "serviceEndpoint": f"{dataverse_url.rstrip('/')}/dataset.xhtml?persistentId={dataverse_pid}",
+                "serviceEndpoint": global_id_url,
             },
             {
                 "id": f"#v{version_number}",
                 "type": "DataverseDataset",
-                "serviceEndpoint": (
-                    f"{dataverse_url.rstrip('/')}/dataset.xhtml"
-                    f"?persistentId={dataverse_pid}&version={dataverse_version}"
-                ),
+                "serviceEndpoint": f"{global_id_url}?version={dataverse_version}",
             },
         ],
     }

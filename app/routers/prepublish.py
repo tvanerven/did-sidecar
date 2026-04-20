@@ -43,28 +43,26 @@ async def prepublish(
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid workflow token")
 
     try:
-        _ = fetch_dataset_metadata(settings.dataverse_url, settings.dataverse_api_token, payload.datasetPid)
+        _ = fetch_dataset_metadata(settings.dataverse_url, settings.dataverse_api_token, payload.datasetGlobalId)
 
-        result = await db.execute(select(Dataset).where(Dataset.dataverse_pid == payload.datasetPid))
+        result = await db.execute(select(Dataset).where(Dataset.dataverse_pid == payload.datasetGlobalId))
         dataset = result.scalar_one_or_none()
         signing_key = decrypt_signing_key(settings.did_signing_key_encrypted, settings.did_signing_key_passphrase)
 
         if dataset is None:
             dataset = Dataset(
-                dataverse_pid=payload.datasetPid,
+                dataverse_pid=payload.datasetGlobalId,
                 did="",
-                pid_url="",
+                pid_url=payload.datasetGlobalId,
             )
             db.add(dataset)
             await db.flush()
 
-            dataset.did = build_did(settings.pid_base_url, dataset.id)
-            dataset.pid_url = f"{settings.pid_base_url.rstrip('/')}/resolve/{dataset.id}"
+            dataset.did = build_did(payload.datasetGlobalId)
 
             genesis = create_genesis_log_entry(
                 did=dataset.did,
-                dataverse_pid=dataset.dataverse_pid,
-                dataverse_url=settings.dataverse_url,
+                global_id_url=payload.datasetGlobalId,
                 signing_key=signing_key,
             )
             did_log = DidLogEntry(
@@ -93,8 +91,7 @@ async def prepublish(
             next_version = (latest_version or 1) + 1
             update_entry = create_update_log_entry(
                 did=dataset.did,
-                dataverse_pid=dataset.dataverse_pid,
-                dataverse_url=settings.dataverse_url,
+                global_id_url=payload.datasetGlobalId,
                 version_number=next_version,
                 dataverse_version=payload.datasetVersion,
                 signing_key=signing_key,
@@ -119,14 +116,11 @@ async def prepublish(
                     )
                 )
 
-        did_log_url = f"{settings.pid_base_url.rstrip('/')}/datasets/{dataset.id}/did.jsonl"
         update_dataset_metadata_with_did(
             dataverse_url=settings.dataverse_url,
             api_token=settings.dataverse_api_token,
-            dataset_pid=dataset.dataverse_pid,
+            dataset_global_id=payload.datasetGlobalId,
             did=dataset.did,
-            did_log_url=did_log_url,
-            pid_url=dataset.pid_url,
         )
         callback_url = f"{settings.dataverse_url.rstrip('/')}/api/workflows/{payload.invocationId}"
         await db.commit()
